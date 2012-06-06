@@ -1,0 +1,103 @@
+V "GNAT Lib v4.6"
+A -gnatwa
+A -O2
+A -Wall
+A -gnatwa
+A -gnaty3
+A -gnatya
+A -gnatyb
+A -gnatyc
+A -gnatyd
+A -gnatye
+A -gnatyf
+A -gnatyh
+A -gnatyi
+A -gnatyk
+A -gnatyl
+A -gnatym
+A -gnatyn
+A -gnatyo
+A -gnatyp
+A -gnatyr
+A -gnatys
+A -gnatyt
+A -gnatyu
+A -gnatyx
+A -gnat05
+A -gnatA
+P SS ZX
+R nnnnnnnnnnnnnnnnnnvnnvnnnnnnnnnnnnnnnnnnnvnnnnnnnnnnnnnnnnnnnvnnnnnnnnnnnnnnnnnn
+
+U thomas_util%b		thomas_util.adb		5171cb08 NE OO PK
+W ada%s			ada.ads			ada.ali
+W ada.strings%s		a-string.ads		a-string.ali
+W ada.strings.maps%s	a-strmap.adb		a-strmap.ali
+W ada.strings.maps.constants%s  a-stmaco.ads	a-stmaco.ali
+W ada.tags%s		a-tags.adb		a-tags.ali
+W system.secondary_stack%s  s-secsta.adb	s-secsta.ali
+W system.soft_links%s	s-soflin.adb		s-soflin.ali
+W system.val_int%s	s-valint.adb		s-valint.ali
+
+U thomas_util%s		thomas_util.ads		1d4c272b EE NE OO PK
+W ada%s			ada.ads			ada.ali
+W ada.strings%s		a-string.ads		a-string.ali
+W ada.strings.unbounded%s  a-strunb.adb		a-strunb.ali
+
+D ada.ads		20070406091342 3ffc8e18
+D a-charac.ads		20070912115821 2d3ec45b
+D a-chlat1.ads		20070912115821 2825df20
+D a-except.ads		20090727140100 0c711ac9
+D a-finali.ads		20090409150019 e5e85fa4
+D a-stream.ads		20090409150019 2ca4ee37
+D a-string.ads		20070406091342 90ac6797
+D a-strmap.ads		20090409150019 9cb836fb
+D a-stmaco.ads		20090409150019 cef4434b
+D a-strunb.ads		20101220072657 e684739b
+D a-tags.ads		20101021101406 c7695348
+D a-unccon.ads		20070406091342 f9eb8f06
+D interfac.ads		20090409150019 f77d8799
+D system.ads		20120503154647 23e1f70b
+D s-exctab.ads		20090417131547 66e51330
+D s-finimp.ads		20090409150019 46853fe8
+D s-finroo.ads		20090409150019 dbb860c9
+D s-parame.ads		20091130110856 9c5d83fa
+D s-secsta.ads		20090707124243 eea35a36
+D s-soflin.ads		20090729085153 9414c974
+D s-stache.ads		20090417130712 596fc1b4
+D s-stalib.ads		20101021102512 c4241c00
+D s-stoele.ads		20090417130712 facd7d98
+D s-stoele.adb		20100617152355 afc5dc80
+D s-stratt.ads		20100909123135 aedef97e
+D s-traent.ads		20090417130712 5221ee41
+D s-unstyp.ads		20090409150019 6ae15c76
+D s-valint.ads		20090409150019 48a52a3f
+D thomas_util.ads	20120530081034 fbc854b0
+D thomas_util.adb	20120530081045 f8f5ea08
+X 1 ada.ads
+16K9*Ada 19e8 29|1r6 1r33 30|1r6 2r6 18r11 20r30 23r35
+X 7 a-string.ads
+16K13*Strings 35e16 29|1r10 1r37 30|1r10 2r10 18r15 20r34 23r39
+X 8 a-strmap.ads
+38K21*Maps 412e21 30|1w18 2r18 18r23 20r42
+47A9*Character_Set(boolean)
+87V13*Is_Subset{boolean} 30|20s19
+99V13*To_Set{47A9} 30|20s47
+X 9 a-stmaco.ads
+38K26*Constants 916e31 30|2w23 21r32
+49a4*Decimal_Digit_Set{8|47A9} 30|21r42
+X 10 a-strunb.ads
+77K21*Unbounded 490e26 29|1w18 1r45 30|23r47
+80R9*Unbounded_String 474e14 29|4r35 30|16r35
+101V13*To_String{string} 30|20s55 23s57
+X 29 thomas_util.ads
+3K9*Thomas_Util 12l5 12e16 30|3b14 35l5 35t16
+4U14*Try_Parse 4>25 5<25 5<47 30|16b14 33l8 33t17
+4r25 Item{10|80R9} 30|16b25 20r66 23r68
+5i25 Number{integer} 30|17b25 23m10 25m10 31m10
+5b47 Is_Valid{boolean} 30|17b47 20m7 22r10 30m10
+9V13*Ends_With{boolean} 9>24 9>44 30|5b13 14l8 14t17
+9s24 source{string} 30|5b24 9r10 11r30
+9s44 endString{string} 30|5b44 9r26 10r16 11r13
+X 30 thomas_util.adb
+10i11 i{integer} 11r24 11r38
+
