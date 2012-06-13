@@ -1,117 +1,125 @@
-with Ada.Strings.Unbounded;
-with Ada.Streams;
 with Ada.Text_IO;
 with Ada.Strings.Unbounded.Text_IO;
 with Event_Parser;
---  with Ada.Containers;
---  with Ada.Containers.Ordered_Maps;
-package body socket is
 
-   function readLine (channel : Stream_Access) return String is
-      use Ada.Strings.Unbounded;
-      use type Ada.Streams.Stream_Element_Count;
-
-      Offset : Ada.Streams.Stream_Element_Offset;
-      Data : Ada.Streams.Stream_Element_Array (1 .. 1);
-      buffer : Unbounded_String;
+package body Socket is
+   use Ada.Text_IO;
+   use Asterisk_AMI_IO;
+   
+   -- Scaffolding
+   procedure Get_Version is
    begin
-      --        Ada.Text_IO.Put_Line ("-Readline Called");
-      Read_Next_Char :
-      loop
-         Ada.Streams.Read (channel.all, Data, Offset);
-         exit Read_Next_Char when Offset <= 0;
-
-         --           for I in 1 .. Offset loop
-         Append (buffer, Character'Val (Data (1)));
-         exit Read_Next_Char when Character'Val (Data (1)) = ASCII.LF;
-         --           end loop;
-      end loop Read_Next_Char;
-      return To_String (buffer);
-   end readLine;
-
-   function readPackage (channel : Stream_Access) return String is
-      use Ada.Strings.Unbounded;
-      newlineChar : constant String := (1 => ASCII.CR, 2 => ASCII.LF);
-      buffer : Unbounded_String;
+      null;
+      -- The following sequence will return a string with Asterisk version.
+      -- Action: Command
+      -- Command: core show version
+      
+      -- This can be very useful in detecting the different capabilities of 
+      -- different versions of Asterisk - and perhaps FreeSwitch?
+   end Get_Version;
+   
+   procedure Login (AMI      : in     Asterisk_AMI_Type;
+		    Username : in     String; 
+		    Secret   : in     String; 
+		    Callback : access Callback_Type'Class := null;
+		    Persist  : in     boolean             := True) is
    begin
-      Collecting_Package :
-      loop
-         declare
-            line : constant String := readLine (channel);
-         begin
-            exit Collecting_Package when line = newlineChar;
-            Append (buffer, line);
-         end;
-
-      end loop Collecting_Package;
-      return To_String (buffer);
-   end readPackage;
-
-   procedure start (channel : Stream_Access) is
-      newlineChar : constant String := (1 => ASCII.CR, 2 => ASCII.LF);
-
-      task type socket_Reader is
-         entry Start (channel : Stream_Access);
-      end socket_Reader;
-
-      task body socket_Reader is
-         channel : Stream_Access;
-      begin
-         accept Start (channel : Stream_Access) do
-            socket_Reader.channel := Start.channel;
-         end Start;
-
-         Ada.Text_IO.Put_Line ("-Task started - DELETE ME!!");
-
-         loop
-            declare
-               item : Ada.Strings.Unbounded.Unbounded_String;
-            begin
-               Ada.Strings.Unbounded.Text_IO.Get_Line (item);
-               String'Write (channel, Ada.Strings.Unbounded.To_String (item)
-                             & newlineChar);
-            end;
-         end loop;
-      end socket_Reader;
-
-      reader : access socket_Reader;
+      String'Write 
+	(AMI.Channel, 
+	 Action_String & Login_String & Line_Termination_String &
+	   "Username: " & Username & Line_Termination_String &
+	   "Secret: " & Secret & Line_Termination_String &
+	   Line_Termination_String);
+   end Login;
+   
+   procedure Logoff (AMI      : in     Asterisk_AMI_Type;
+		     Callback : access Callback_Type'Class := null) is
    begin
-      Ada.Text_IO.Put_Line ("Welcome line: " & readLine (channel));
+      String'Write 
+	(AMI.Channel, 
+	 Action_String & Logoff_String & Line_Termination_String &
+	   Line_Termination_String);
+   end Logoff;
+   
+   
+   -- TODO
+   procedure Ping (Asterisk_AMI : in Asterisk_AMI_Type) is
+   begin
+      String'Write 
+	(Asterisk_AMI.Channel, 
+	 Action_String & Ping_String & Line_Termination_String &
+	   Line_Termination_String);
+   end Ping;
+   
+   
+   procedure Start (channel : Stream_Access) is
+      Asterisk : Asterisk_AMI_Type := (Greeting  => null,
+				       Channel   => Channel,
+				       Logged_In => False);
+      
+      --  task type Socket_Reader is
+      --     entry Start (channel : Stream_Access);
+      --  end socket_Reader;
+
+      --  task body Socket_Reader is
+      --     channel : Stream_Access;
+      --  begin
+      --     accept Start (channel : Stream_Access) do
+      --        socket_Reader.channel := Start.channel;
+      --     end Start;
+      --     loop
+      --        declare
+      --           item : Ada.Strings.Unbounded.Unbounded_String;
+      --        begin
+      --  	       Put_Line ("Socket_reader got line:");
+      --           Ada.Strings.Unbounded.Text_IO.Get_Line (item);
+      --           String'Write (channel, Ada.Strings.Unbounded.To_String (item)
+      --                         & Line_Termination_String);
+      --        end;
+      --     end loop;
+      --  end socket_Reader;
+      --  reader : access socket_Reader;
+   begin
+      Ada.Text_IO.Put_Line ("Welcome line: " & Read_Line (channel));
       --  Reading the welcome line;
-
-      --  Login
-      declare
-         username : constant String := "admin";
-         Secret : constant String := "amp111";
-      begin
-         String'Write (channel, "Action: Login" & newlineChar &
-                       "Username: " & username & newlineChar &
-                       "Secret: " & Secret & newlineChar &
-                       newlineChar);
-      end;
-
-      Ada.Text_IO.Put ("login: " & readPackage (channel));
+      
+      Login(Asterisk,"test","test");
+      Ping(Asterisk);
+	 
+      --      Ada.Text_IO.Put ("login: " & readPackage (channel));
       --  Reading login confirmation.
 
-      reader := new socket_Reader;
-      reader.Start (channel);
+      --reader := new socket_Reader;
+      --      reader.Start (channel);
 
       loop
          declare
             use Event_Parser;
             use Ada.Strings.Unbounded;
-            Event : constant String := readPackage (channel);
+            Event : constant String := Read_Package (channel);
             KeyValueList : constant EventList := parse (Event);
          begin
---              Ada.Text_IO.Put_Line ("[" & Event & "]" & newlineChar);
-            for i in KeyValueList'Range loop
-               Ada.Text_IO.Put_Line (
-                      "Key: [" & To_String (KeyValueList (i, Key)) & "] " &
-                      "Value: [" & To_String (KeyValueList (i, Value)) & "]");
+	    -- Basically we have responses, or events
+	    if KeyValueList(KeyValueList'First, Key)  = "Event" then
+	       Put_Line("Got event");
+	    elsif KeyValueList(KeyValueList'First, Key)  = "Response" then
+	       Put_Line("Got Response");
+	       -- Direct it to the callback associated with the previous commmand
+	    end if;
+	      
+	    
+	    
+            for i in KeyValueList'First+1 .. KeyValueList'Last loop
+               Put_Line 
+		 ("Key: [" & To_String (KeyValueList (i, Key)) & "] " &
+		    "Value: [" & To_String (KeyValueList (i, Value)) & "]");
+	       
+	       
+	       
             end loop;
-            Ada.Text_IO.New_Line;
+            New_Line;
          end;
       end loop;
 
-   end start;
-end socket;
+   end Start;
+end Socket;

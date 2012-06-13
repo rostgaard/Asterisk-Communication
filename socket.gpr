@@ -46,7 +46,7 @@ project Socket is
          when "Production" =>
             for Default_Switches ("Ada")
               use ("-gnatwa",
-                   "-gnaty3abcdefhiklmnoprstux",
+--                   "-gnaty3abcdefhiklmnoprstux",
                    "-Wall",
                    "-O2",
                    "-gnat05");

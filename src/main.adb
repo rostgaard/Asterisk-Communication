@@ -22,38 +22,31 @@ with GNAT.Sockets;
 use GNAT.Sockets;
 with socket;
 with Ada.Streams;
---  with Thomas_Util;
+with Queue;
 
 procedure Main is
    use Ada.Text_IO;
    use type Ada.Streams.Stream_Element_Count;
 
-   CarageReturn_NewLine : constant String := (1 => ASCII.CR, 2 => ASCII.LF);
+   Line_Termination : constant String := ASCII.CR & ASCII.LF;
 
    Client : Socket_Type;
    Address : Sock_Addr_Type;
    Channel : Stream_Access;
-   server_host : constant String := "192.168.122.32";
-   server_port : constant Port_Type := 5038;
-
+   Server_Host : constant String := "192.168.2.100";
+   Server_Port : constant Port_Type := 5038;
 begin
-   Put ("Program started" & CarageReturn_NewLine);
-   --     for hello in 1 .. 100 loop
-   --        Put_Line ("Socket initialise");
-   --        delay 0.1;
-   --        if hello = 10 then
-   --           return;
-   --        end if;
-   --     end loop;
+   
+   Put_Line ("Program started");
 
    Create_Socket (Client);
-   Address.Addr := Inet_Addr (server_host);
-   Address.Port := server_port;
+   Address.Addr := Inet_Addr (Server_Host);
+   Address.Port := Server_Port;
 
    Connect_Socket (Client, Address);
    Channel := Stream (Client);
 
-   socket.start (Channel);
+   Socket.Start (Channel);
 
-   Ada.Text_IO.Put_Line ("Bye Bye socket is shutting down!");
+   Put_Line ("Bye Bye socket is shutting down!");
 end Main;
