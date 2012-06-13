@@ -1,10 +1,31 @@
 with Ada.Text_IO;
 with Ada.Strings.Unbounded.Text_IO;
-with Event_Parser;
 
 package body Socket is
    use Ada.Text_IO;
    use Asterisk_AMI_IO;
+   use Ada.Strings.Unbounded;
+   
+   Asterisk         : Asterisk_AMI_Type;
+   
+   Last_Action      : Action := None;
+   
+   Callback_Routine : Action_Callback_Routine_Table := 
+     (Login => Login_Callback'access,
+      others => null);
+   
+   procedure Login_Callback(Event_List : in Event_List_Type) is
+   begin
+      -- Now we play a game called; Find the message!
+      for i in Event_List'First+1 .. Event_List'Last loop
+	 if To_String (Event_List (i, Key)) = "Message" and 
+	   then To_String (Event_List (i, Value)) = 
+	      "Authentication accepted" then
+	      Asterisk.Logged_In := True;
+	 end if;
+      end loop;
+   end Login_Callback;
+   
    
    -- Scaffolding
    procedure Get_Version is
@@ -18,11 +39,11 @@ package body Socket is
       -- different versions of Asterisk - and perhaps FreeSwitch?
    end Get_Version;
    
-   procedure Login (AMI      : in     Asterisk_AMI_Type;
-		    Username : in     String; 
-		    Secret   : in     String; 
-		    Callback : access Callback_Type'Class := null;
-		    Persist  : in     boolean             := True) is
+   procedure Login (AMI      : in Asterisk_AMI_Type;
+		    Username : in String; 
+		    Secret   : in String; 
+		    Callback : in Callback_Type := null;
+		    Persist  : in boolean       := True) is
    begin
       String'Write 
 	(AMI.Channel, 
@@ -30,33 +51,39 @@ package body Socket is
 	   "Username: " & Username & Line_Termination_String &
 	   "Secret: " & Secret & Line_Termination_String &
 	   Line_Termination_String);
+      
+      -- Update the table if we were asked to used this as standard callback
+      if Callback /= null and then Persist then
+	 Callback_Routine(Login) := Callback;
+      end if;
+      
+      Last_Action := Login;
    end Login;
    
    procedure Logoff (AMI      : in     Asterisk_AMI_Type;
-		     Callback : access Callback_Type'Class := null) is
+		     Callback : access Callback_Type := null) is
    begin
       String'Write 
 	(AMI.Channel, 
 	 Action_String & Logoff_String & Line_Termination_String &
 	   Line_Termination_String);
+      Last_Action := Logoff;
    end Logoff;
    
    
-   -- TODO
+   -- TODO: comment
    procedure Ping (Asterisk_AMI : in Asterisk_AMI_Type) is
    begin
       String'Write 
 	(Asterisk_AMI.Channel, 
 	 Action_String & Ping_String & Line_Termination_String &
 	   Line_Termination_String);
+      Last_Action := Ping;
    end Ping;
    
-   
+
+   -- TODO: Write up and architecture that uses a queue to send requests, or blocks
    procedure Start (channel : Stream_Access) is
-      Asterisk : Asterisk_AMI_Type := (Greeting  => null,
-				       Channel   => Channel,
-				       Logged_In => False);
-      
       --  task type Socket_Reader is
       --     entry Start (channel : Stream_Access);
       --  end socket_Reader;
@@ -80,12 +107,15 @@ package body Socket is
       --  end socket_Reader;
       --  reader : access socket_Reader;
    begin
-      Ada.Text_IO.Put_Line ("Welcome line: " & Read_Line (channel));
-      --  Reading the welcome line;
+      Asterisk := (Greeting  => new String'(Read_Line (channel)),
+		   Channel   => Channel,
+		   Logged_In => False);
       
-      Login(Asterisk,"test","test");
-      Ping(Asterisk);
-	 
+      -- Send login
+      Login(AMI      => Asterisk,
+	    Username => "test",
+	    Secret   => "test");
+      
       --      Ada.Text_IO.Put ("login: " & readPackage (channel));
       --  Reading login confirmation.
 
@@ -95,31 +125,26 @@ package body Socket is
       loop
          declare
             use Event_Parser;
-            use Ada.Strings.Unbounded;
             Event : constant String := Read_Package (channel);
-            KeyValueList : constant EventList := parse (Event);
+            Event_List : constant Event_List_Type := parse (Event);
          begin
 	    -- Basically we have responses, or events
-	    if KeyValueList(KeyValueList'First, Key)  = "Event" then
+	    if Event_List(Event_List'First, Key)  = "Event" then
 	       Put_Line("Got event");
-	    elsif KeyValueList(KeyValueList'First, Key)  = "Response" then
+	    elsif Event_List(Event_List'First, Key)  = "Response" then
 	       Put_Line("Got Response");
+	       -- Lookup the callback, and pass the value.
+	       Callback_Routine(Last_Action)(Event_List);
 	       -- Direct it to the callback associated with the previous commmand
 	    end if;
-	      
 	    
-	    
-            for i in KeyValueList'First+1 .. KeyValueList'Last loop
-               Put_Line 
-		 ("Key: [" & To_String (KeyValueList (i, Key)) & "] " &
-		    "Value: [" & To_String (KeyValueList (i, Value)) & "]");
-	       
-	       
-	       
-            end loop;
-            New_Line;
+            --  for i in Event_List'First+1 .. Event_List'Last loop
+            --     Put_Line 
+	    --  	 ("Key: [" & To_String (Event_List (i, Key)) & "] " &
+	    --  	    "Value: [" & To_String (Event_List (i, Value)) & "]");
+            --  end loop;
+            --  New_Line;
          end;
       end loop;
-
    end Start;
 end Socket;

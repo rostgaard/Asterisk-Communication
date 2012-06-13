@@ -1,5 +1,8 @@
 with GNAT.Sockets;   use GNAT.Sockets;
 with Asterisk_AMI_IO;
+with Event_Parser; use Event_Parser;
+with Protocol; use Protocol;
+
 package Socket is
    procedure start (channel : Stream_Access);
    --  Her starter det enlige socket program.
@@ -152,28 +155,24 @@ private
 		    Challenge,-- Generate Challenge for MD5 Auth (Priv: <none>)
 		    Login,-- Login Manager (Priv: <none>)
 		    Logoff,-- Logoff Manager (Priv: <none>)
-		    Events); -- Control Event Flow (Priv: <none>)
-
-		      
-     type Callback_Type is
-     tagged limited null record;
-     
-     type Asterisk_AMI_Type is 
-	record
-	   Greeting  : access String := null;
-	   Logged_In : Boolean := false;
-	   Channel   : Stream_Access;
-	end record;
-     
-     -- Protocol specific, should move to a protocol.ads
-     Line_Termination_String : constant String := ASCII.CR & ASCII.LF;
+		    Events, -- Control Event Flow (Priv: <none>)
+		    None); -- Internal;
    
-   -- Key part of request string
-   Action_String           : constant String := "Action: ";
-   Secret_String           : constant String := "Secret: ";
+   -- Basic signature of our callback routine for responses
+   type Response_Callback_Type is access procedure (Event:String);
    
-   -- Value part of request string
-   Login_String            : constant String := "Login";
-   Ping_String             : constant String := "Ping";
-   Logoff_String           : constant String := "Logoff";
+   type Callback_Type is access procedure (Event_List: Event_List_Type);
+   
+   -- Callback table
+   type Action_Callback_Routine_Table is array(Action) of Callback_Type;
+   
+   type Asterisk_AMI_Type is 
+      record
+	 Greeting  : access String := null;
+	 Logged_In : Boolean := false;
+	 Channel   : Stream_Access;
+      end record;
+   
+   procedure Login_Callback(Event_List : in Event_List_Type);
+   
 end Socket;

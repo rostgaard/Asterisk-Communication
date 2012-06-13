@@ -22,7 +22,6 @@ with GNAT.Sockets;
 use GNAT.Sockets;
 with socket;
 with Ada.Streams;
-with Queue;
 
 procedure Main is
    use Ada.Text_IO;
@@ -36,7 +35,6 @@ procedure Main is
    Server_Host : constant String := "192.168.2.100";
    Server_Port : constant Port_Type := 5038;
 begin
-   
    Put_Line ("Program started");
 
    Create_Socket (Client);
