@@ -11,64 +11,61 @@ private
    -- The following types are derived from
    -- http://www.voip-info.org/wiki/view/asterisk+manager+events
    
-   --Agent Status Events
-   type Agent_Status_Event is (Agentcallbacklogin,
-			       Agentcallbacklogoff,
-			       AgentCalled,
-			       AgentComplete,
-			       AgentConnect,
-			       AgentDump,
-			       Agentlogin,
-			       Agentlogoff,
-			       QueueMemberAdded,
-			       QueueMemberPaused,
-			       QueueMemberStatus);
-   
-   -- Command Status Events
-   type Command_Status_Event is (Cdr,
-				 Dial,
-				 ExtensionStatus,
-				 Hangup,
-				 MusicOnHold,
-				 Join,
-				 Leave,
-				 Link,
-				 MeetmeJoin,
-				 MeetmeLeave,
-				 MeetmeStopTalking,
-				 MeetmeTalking,
-				 MessageWaiting,
-				 Newcallerid,
-				 Newchannel,
-				 Newexten,
-				 ParkedCall,
-				 Rename,
-				 SetCDRUserField,
-				 Unlink,
-				 UnParkedCall);
-   -- Log Status Events
-   type Log_Status_Event is (Alarm,
-			     AlarmClear,
-			     DNDState,
-			     LogChannel,
-			     PeerStatus,
-			     Registry,
-			     Reload,
-			     Shutdown);
-   
-   --User Status Events
-   type User_Status_Event is (UserEvent);
-   
-   -- Unformatted and Undocumented
-   type Undocumented_Event is (Newstate,
-			       ParkedCallsComplete,
-			       QueueParams,
-			       QueueMember,
-			       QueueStatusEnd,
-			       Status,
-			       StatusComplete,
-			       ZapShowChannels,
-			       ZapShowChannelsComplete);
+   type Event is 
+     --Agent Status Events
+     (Agentcallbacklogin,
+      Agentcallbacklogoff,
+      AgentCalled,
+      AgentComplete,
+      AgentConnect,
+      AgentDump,
+      Agentlogin,
+      Agentlogoff,
+      QueueMemberAdded,
+      QueueMemberPaused,
+      QueueMemberStatus,
+      -- Command Status Events
+      Cdr,
+      Dial,
+      ExtensionStatus,
+      Hangup,
+      MusicOnHold,
+      Join,
+      Leave,
+      Link,
+      MeetmeJoin,
+      MeetmeLeave,
+      MeetmeStopTalking,
+      MeetmeTalking,
+      MessageWaiting,
+      Newcallerid,
+      Newchannel,
+      Newexten,
+      ParkedCall,
+      Rename,
+      SetCDRUserField,
+      Unlink,
+      UnParkedCall,
+      -- Log Status Events
+      Alarm,
+      AlarmClear,
+      DNDState,
+      LogChannel,
+      PeerStatus,
+      Registry,
+      Reload,
+      Shutdown,
+      UserEvent,
+      -- Unformatted and Undocumented
+      Newstate,
+      ParkedCallsComplete,
+      QueueParams,
+      QueueMember,
+      QueueStatusEnd,
+      Status,
+      StatusComplete,
+      ZapShowChannels,
+      ZapShowChannelsComplete);
 
    -- Action types
    type Action is ( WaitEvent, -- Wait for an event to occur (Priv: <none>)
@@ -163,8 +160,11 @@ private
    
    type Callback_Type is access procedure (Event_List: Event_List_Type);
    
-   -- Callback table
+   -- Callback table for actions
    type Action_Callback_Routine_Table is array(Action) of Callback_Type;
+   
+   -- Callback table for log events
+   type Event_Callback_Routine_Table is array(Event) of Callback_Type;
    
    type Asterisk_AMI_Type is 
       record
@@ -173,6 +173,10 @@ private
 	 Channel   : Stream_Access;
       end record;
    
+   -- Callbacks
    procedure Login_Callback(Event_List : in Event_List_Type);
+   procedure Dial_Callback(Event_List : in Event_List_Type);
+   procedure PeerStatus_Callback(Event_List : in Event_List_Type);
+
    
 end Socket;

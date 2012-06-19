@@ -1,18 +1,74 @@
 with Ada.Text_IO;
 with Ada.Strings.Unbounded.Text_IO;
 
+with Peers; use Peers;
+
 package body Socket is
    use Ada.Text_IO;
    use Asterisk_AMI_IO;
    use Ada.Strings.Unbounded;
    
    Asterisk         : Asterisk_AMI_Type;
-   
    Last_Action      : Action := None;
+   Peer_List        : Peer_List_Type.Map;
    
+   -- Callback maps
    Callback_Routine : Action_Callback_Routine_Table := 
-     (Login => Login_Callback'access,
+     (Login  => Login_Callback'access,
       others => null);
+   
+   Event_Callback_Routine : Event_Callback_Routine_Table := 
+     (Dial       => Dial_Callback'access,
+      PeerStatus => PeerStatus_Callback'access,
+      others     => null);
+   
+   procedure PeerStatus_Callback(Event_List : in Event_List_Type) is
+      Peer    : Peer_Type;
+      Map_Key : Unbounded_String;
+   begin
+      Put_Line("Peer status update");
+      for i in Event_List'First+1 .. Event_List'Last loop
+	 if To_String (Event_List (i, Key)) = "Peer" then
+	    Peer.Peer := Event_List (i, Value);
+	    
+	 elsif To_String (Event_List (i, Key)) = "ChannelType" then
+	    Peer.Channel := Event_List (i, Value);
+	    
+	 elsif To_String (Event_List (i, Key)) = "Address" then
+	    Peer.Address := Event_List (i, Value);
+	    
+	 elsif To_String (Event_List (i, Key)) = "Port" then
+	    Peer.Port := Event_List (i, Value);
+	    
+	 elsif To_String (Event_List (i, Key)) = "PeerStatus" then
+	   if To_String(Event_List (i, Value)) = "Unregistered"  then
+	    Peer.Status := Unregistered;
+	   elsif To_String(Event_List (i, Value)) = "Registered"  then
+	      Peer.Status := Registered;
+	   else
+	      Put_Line("SIP client to unknown state: " & 
+			 To_String(Event_List (i, Value)));
+	   end if;
+	 end if;
+      end loop;
+      
+      
+      -- Update the peer list
+      if Peer_List_Type.Contains (Container => Peer_List,
+				  Key       => Map_Key) then
+	 Peer_List_Type.Replace(Container => Peer_List,
+				Key       => Map_Key,
+				New_Item  => Peer);
+      else
+	 Peer_List_Type.Insert(Container => Peer_List,
+				Key       => Map_Key,
+				New_Item  => Peer);
+      end if;
+      
+      Print_Peer(Peer_List_Type.Element(Container => Peer_List,
+					Key       => Map_Key));
+      
+   end PeerStatus_Callback;
    
    procedure Login_Callback(Event_List : in Event_List_Type) is
    begin
@@ -26,6 +82,88 @@ package body Socket is
       end loop;
    end Login_Callback;
    
+   --  Event: Dial
+   --  Privilege: call,all
+   --  SubEvent: Begin
+   --  Channel: SIP/softphone2-0000000a
+   --  Destination: SIP/softphone1-0000000b
+   --  CallerIDNum: softphone2
+   --  CallerIDName: <unknown>
+   --  UniqueID: 1340097427.10
+   --  DestUniqueID: 1340097427.11
+   --  Dialstring: softphone1
+   procedure Dial_Callback(Event_List : in Event_List_Type) is
+   begin
+      -- Now we play a game called; Find the message!
+      for i in Event_List'First+1 .. Event_List'Last loop
+	 if To_String (Event_List (i, Key)) = "Message" and 
+	   then To_String (Event_List (i, Value)) = 
+	      "Authentication accepted" then
+	      Asterisk.Logged_In := True;
+	 end if;
+      end loop;
+   end Dial_Callback;
+   
+   
+   --  Event: Newstate
+   --  Privilege: call,all
+   --  Channel: SIP/softphone1-0000000b
+   --  ChannelState: 5
+   --  ChannelStateDesc: Ringing
+   --  CallerIDNum: 100
+   --  CallerIDName: 
+   --  Uniqueid: 1340097427.11
+   procedure NewState_Callback is
+   begin
+      Put_line ("Not implemented");
+      raise PROGRAM_ERROR;
+   end NewState_Callback;
+   
+   
+   --  Event: Bridge
+   --  Privilege: call,all
+   --  Bridgestate: Link
+   --  Bridgetype: core
+   --  Channel1: SIP/softphone2-0000000a
+   --  Channel2: SIP/softphone1-0000000b
+   --  Uniqueid1: 1340097427.10
+   --  Uniqueid2: 1340097427.11
+   --  CallerID1: softphone2
+   --  CallerID2: 100
+   procedure Bridge_Callback is
+   begin
+      Put_line ("Not implemented");
+      raise PROGRAM_ERROR;
+   end Bridge_Callback;
+   
+   --  Event: Unlink
+   --  Privilege: call,all
+   --  Channel1: SIP/softphone2-0000000a
+   --  Channel2: SIP/softphone1-0000000b
+   --  Uniqueid1: 1340097427.10
+   --  Uniqueid2: 1340097427.11
+   --  CallerID1: softphone2
+   --  CallerID2: 100
+   procedure Hangup_Callback (Event_List : in Event_List_Type) is
+   begin
+      Put_line ("Not implemented");
+      raise PROGRAM_ERROR;
+   end Hangup_Callback;
+   
+   
+   --  Event: Hangup
+   --  Privilege: call,all
+   --  Channel: SIP/softphone1-0000000b
+   --  Uniqueid: 1340097427.11
+   --  CallerIDNum: 100
+   --  CallerIDName: <unknown>
+   --  Cause: 16
+   --  Cause-txt: Normal Clearing
+   procedure Hangup_Callback (Event_List : in Event_List_Type) is
+   begin
+      Put_line ("Not implemented");
+      raise PROGRAM_ERROR;
+   end Hangup_Callback;
    
    -- Scaffolding
    procedure Get_Version is
@@ -128,8 +266,22 @@ package body Socket is
             Event : constant String := Read_Package (channel);
             Event_List : constant Event_List_Type := parse (Event);
          begin
+	    
+            for i in Event_List'First .. Event_List'Last loop
+               Put_Line 
+	    	 ("Key: [" & To_String (Event_List (i, Key)) & "] " &
+	    	    "Value: [" & To_String (Event_List (i, Value)) & "]");
+            end loop;
+            New_Line;
+	    
 	    -- Basically we have responses, or events
 	    if Event_List(Event_List'First, Key)  = "Event" then
+	       
+	       if To_String (Event_List (Event_List'First, Value)) = "PeerStatus" then 
+	    	  Event_Callback_Routine(PeerStatus)(Event_List);
+	       end if;
+	       
+	       
 	       Put_Line("Got event");
 	    elsif Event_List(Event_List'First, Key)  = "Response" then
 	       Put_Line("Got Response");
@@ -138,13 +290,14 @@ package body Socket is
 	       -- Direct it to the callback associated with the previous commmand
 	    end if;
 	    
-            --  for i in Event_List'First+1 .. Event_List'Last loop
-            --     Put_Line 
-	    --  	 ("Key: [" & To_String (Event_List (i, Key)) & "] " &
-	    --  	    "Value: [" & To_String (Event_List (i, Value)) & "]");
-            --  end loop;
-            --  New_Line;
+            for i in Event_List'First .. Event_List'Last loop
+               Put_Line 
+	    	 ("Key: [" & To_String (Event_List (i, Key)) & "] " &
+	    	    "Value: [" & To_String (Event_List (i, Value)) & "]");
+            end loop;
+            New_Line;
          end;
       end loop;
    end Start;
+   
 end Socket;
