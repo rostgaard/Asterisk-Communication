@@ -2,18 +2,21 @@ with Ada.Text_IO;
 with Ada.Containers.Hashed_Maps;  use Ada.Containers;
 with Ada.Strings.Hash;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
+with Ada.Calendar;
 
+-- TODO: Make this into a generic that uses protected types for accessing the map.
 package Peers is
    type SIP_Peer_Status_Type is (Unregistered, Registered);
    
    type Peer_Type is
       record
-	 Defined : Boolean := False;
-	 Status  : SIP_Peer_Status_Type := Unregistered;
-	 Channel : Unbounded_String;
-	 Peer    : Unbounded_String;
-	 Port    : Unbounded_String;
-	 Address : Unbounded_String;
+	 Defined   : Boolean := False;
+	 Status    : SIP_Peer_Status_Type := Unregistered;
+	 Channel   : Unbounded_String;
+	 Peer      : Unbounded_String;
+	 Port      : Unbounded_String;
+	 Address   : Unbounded_String;
+	 Last_Seen : Ada.Calendar.Time := Ada.Calendar.Clock;
       end record;
    
    function Hash (Peer_Address: in Unbounded_String) return Hash_Type;

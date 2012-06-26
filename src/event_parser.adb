@@ -1,3 +1,4 @@
+with Ada.Text_IO;
 package body Event_Parser is
 
    function CountLines (Event : String) return Natural is
@@ -69,6 +70,8 @@ package body Event_Parser is
          end loop;
          return List;
       end;
-
+   exception
+      when others =>
+	 Ada.Text_IO.Put_Line("Event_Parser.Parse");
    end parse;
 end Event_Parser;

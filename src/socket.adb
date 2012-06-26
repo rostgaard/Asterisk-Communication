@@ -1,5 +1,6 @@
 with Ada.Text_IO;
 with Ada.Strings.Unbounded.Text_IO;
+with Ada.Calendar;
 
 with Peers; use Peers;
 
@@ -21,6 +22,7 @@ package body Socket is
      (Dial       => Dial_Callback'access,
       PeerStatus => PeerStatus_Callback'access,
       others     => null);
+   
    
    procedure PeerStatus_Callback(Event_List : in Event_List_Type) is
       Peer    : Peer_Type;
@@ -52,6 +54,8 @@ package body Socket is
 	 end if;
       end loop;
       
+      -- Update the timestamp
+      Peer.Last_Seen := Ada.Calendar.Clock;
       
       -- Update the peer list
       if Peer_List_Type.Contains (Container => Peer_List,
@@ -104,6 +108,32 @@ package body Socket is
       end loop;
    end Dial_Callback;
    
+   -- Lists the SIP peers. Returns a PeerEntry event for each
+   -- SIP peer, and a PeerlistComplete event upon completetion
+   --  Event: PeerEntry
+   --  Channeltype: SIP
+   --  ObjectName: softphone2
+   --  ChanObjectType: peer
+   --  IPaddress: 90.184.227.68
+   --  IPport: 59028
+   --  Dynamic: yes
+   --  Natsupport: yes
+   --  VideoSupport: no
+   --  TextSupport: no
+   --  ACL: no
+   --  Status: Unmonitored
+   --  RealtimeDevice: no
+   --    
+   --  Event: PeerlistComplete
+   --  EventList: Complete
+   --  ListItems: 2
+   procedure SIPPeers_Callback is
+   begin
+      Put_line ("Not implemented");
+      raise NOT_IMPLEMENTED;
+   end SIPPeers_Callback;
+   
+
    
    --  Event: Newstate
    --  Privilege: call,all
@@ -144,11 +174,11 @@ package body Socket is
    --  Uniqueid2: 1340097427.11
    --  CallerID1: softphone2
    --  CallerID2: 100
-   procedure Hangup_Callback (Event_List : in Event_List_Type) is
+   procedure Unlink_Callback (Event_List : in Event_List_Type) is
    begin
       Put_line ("Not implemented");
       raise PROGRAM_ERROR;
-   end Hangup_Callback;
+   end Unlink_Callback;
    
    
    --  Event: Hangup
@@ -172,10 +202,20 @@ package body Socket is
       -- The following sequence will return a string with Asterisk version.
       -- Action: Command
       -- Command: core show version
-      
+      --
+      -- OR!
+      -- Action: CoreSettings
+      -- 
       -- This can be very useful in detecting the different capabilities of 
-      -- different versions of Asterisk - and perhaps FreeSwitch?
+      -- different versions of Asterisk - and perhaps even FreeSwitch?
    end Get_Version;
+   
+   -- Lists agents
+   procedure Agents is
+   begin
+      Put_line ("Not implemented");
+      raise PROGRAM_ERROR;
+   end Agents;
    
    procedure Login (AMI      : in Asterisk_AMI_Type;
 		    Username : in String; 
@@ -267,12 +307,12 @@ package body Socket is
             Event_List : constant Event_List_Type := parse (Event);
          begin
 	    
-            for i in Event_List'First .. Event_List'Last loop
-               Put_Line 
-	    	 ("Key: [" & To_String (Event_List (i, Key)) & "] " &
-	    	    "Value: [" & To_String (Event_List (i, Value)) & "]");
-            end loop;
-            New_Line;
+            --  for i in Event_List'First .. Event_List'Last loop
+            --     Put_Line 
+	    --  	 ("Key: [" & To_String (Event_List (i, Key)) & "] " &
+	    --  	    "Value: [" & To_String (Event_List (i, Value)) & "]");
+            --  end loop;
+            --  New_Line;
 	    
 	    -- Basically we have responses, or events
 	    if Event_List(Event_List'First, Key)  = "Event" then
@@ -280,24 +320,19 @@ package body Socket is
 	       if To_String (Event_List (Event_List'First, Value)) = "PeerStatus" then 
 	    	  Event_Callback_Routine(PeerStatus)(Event_List);
 	       end if;
-	       
-	       
-	       Put_Line("Got event");
 	    elsif Event_List(Event_List'First, Key)  = "Response" then
-	       Put_Line("Got Response");
 	       -- Lookup the callback, and pass the value.
 	       Callback_Routine(Last_Action)(Event_List);
 	       -- Direct it to the callback associated with the previous commmand
 	    end if;
-	    
-            for i in Event_List'First .. Event_List'Last loop
-               Put_Line 
-	    	 ("Key: [" & To_String (Event_List (i, Key)) & "] " &
-	    	    "Value: [" & To_String (Event_List (i, Value)) & "]");
-            end loop;
-            New_Line;
-         end;
+	 exception
+	    when others =>
+	       Put_Line("Socket.Start.declare: ");
+	 end;
       end loop;
+   exception
+      when others =>
+	 Put_Line("Socket.Start: ");
    end Start;
    
 end Socket;
